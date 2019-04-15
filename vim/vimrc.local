@@ -1,0 +1,96 @@
+"-----------------------------------------------------------------------------
+" Custom settings
+"-----------------------------------------------------------------------------
+set nocompatible                            " dont' be compatible with vi
+let mapleader=","                           " make sure the leader is ,
+imap jj <ESC>                               " escape insert mode with jj
+cmap W! w !sudo tee % > /dev/null           " write a file as sudo
+cmap w!! w !sudo tee % > /dev/null          " try and write as sudo if needed
+noremap <leader><leader> <c-^>              " switch to last buffer
+nnoremap <C-p> :Files<CR>                   " fzf open files
+set showmatch                               " briefly jump to a paren once its balanced
+set nowrap                                  " dont' wrap text
+set linebreak                               " dont' wrap text in the middle of a word
+set tabstop=2                               " two space indent
+set shiftwidth=2                            " two space shiftwidth
+set softtabstop=2                           " two space soft tabstop
+set expandtab                               " use spaces, not tabs
+set shiftround                              " round indent to a multiple of shiftwidth
+set matchpairs+=<:>                         " show <> as well as ()
+set cindent                                 " C/C++ style indenting
+set cinoptions=g0>2                         " take public/private to 0 tabs
+                                            " 2 space indents (google style)
+set confirm                                 " y-n-c prompt if closing unsaved files
+set showcmd                                 " show incomplete normal mode commands as I type
+set report=0                                " : commands always print changed line count
+set shortmess+=a                            " use [+]/[RO]/[W] for modified/readonly/written
+set laststatus=2                            " always show the statusline
+set ignorecase                              " default to useing case insensitive searches
+set smartcase                               " unless uppercase letters are used
+set smarttab                                " handle tabs intelligently
+set hlsearch                                " highlight searches by default
+set incsearch                               " incrementally search while typing a search
+let g:deoplete#enable_at_startup=1          " turn on deoplete completion
+set splitbelow
+set splitright
+
+" Reading / Writing settings
+set noautowrite                             " never write a file without being told
+set noautowriteall                          " really -- never do it
+set noautoread                              " don't re-read changed files
+set modeline                                " allow embeded vim options
+set modelines=5                             " options must be first/last 5 lines
+set ffs=unix,dos,mac                        " try and recognize line endings
+
+" highlight column 80/120
+let &colorcolumn="80,".join(range(120,999), ",")
+
+" disable arrow keys
+nnoremap <Left> :echoe "use h"<CR>
+nnoremap <Right> :echoe "use l"<CR>
+nnoremap <Up> :echoe "use k"<CR>
+nnoremap <Down> :echoe "use j"<CR>
+
+" color theme
+colorscheme gruvbox
+
+" source vimrc after saving it
+"if has("autocmd")
+"  autocmd bufwritepost .vimrc source $MYVIMRC
+"  autocmd bufwritepost vimrc.local source $MYVIMRC
+"endif
+
+" vim airline
+let g:airline#extensions#tabline#enabled = 1
+let g:airline_theme='hybrid'
+
+" Spelling
+set spelllang=en
+set spellfile=$HOME/.spelling.en.utf-8.add
+set spell
+set conceallevel=2
+let g:grammarous#default_comments_only_filetypes = {
+  \'*': 1, 'help' : 0, 'markdown': 0,
+  \}
+
+" Protobuf support
+augroup filetype
+  au! BufRead,BufNewFile *.proto setfiletype proto
+augroup end
+
+" Fzf configurations
+let g:fzf_action = {
+      \'ctrl-t': 'tab split',
+      \'ctrl-x': 'split',
+      \'ctrl-v': 'vsplit'}
+let g:fzf_layout = { 'down': '~40%'}
+
+" Terraform
+let g:terraform_fmt_on_save=1
+
+" Python mode
+let g:python_mode = 'python3'
+let g:pymode_trim_whitespaces = 1
+
+" delete trailing whitespace from all files
+autocmd BufWritePre * :%s/\s\+$//e
