@@ -1,6 +1,30 @@
-"-----------------------------------------------------------------------------
-" Custom settings
-"-----------------------------------------------------------------------------
+" --------------------------------------------------
+"  vim settings
+" --------------------------------------------------
+
+" Auto setup Plug
+if empty(glob('~/.vim/autoload/plug.vim'))
+  silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
+call plug#begin('~/.vim/plugged')
+Plug 'morhetz/gruvbox'
+Plug 'fatih/vim-go', {'do': ':GoUpdateBinaries' }
+Plug 'Shougo/deoplete.nvim'
+Plug 'roxma/nvim-yarp'
+Plug 'roxma/vim-hug-neovim-rpc'
+Plug 'deoplete-plugins/deoplete-jedi'
+Plug 'deoplete-plugins/deoplete-go', {'do': 'make'}
+Plug 'python-mode/python-mode', { 'for': 'python', 'branch': 'develop' }
+Plug 'jiangmiao/auto-pairs'
+Plug 'dense-analysis/ale'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+call plug#end()
+
+" Global Settings
 set nocompatible                            " dont' be compatible with vi
 let mapleader=","                           " make sure the leader is ,
 imap jj <ESC>                               " escape insert mode with jj
@@ -41,6 +65,7 @@ set noautoread                              " don't re-read changed files
 set modeline                                " allow embeded vim options
 set modelines=5                             " options must be first/last 5 lines
 set ffs=unix,dos,mac                        " try and recognize line endings
+set backspace=indent,eol,start             " make sure backspace works
 
 " highlight column 80/120
 let &colorcolumn="80,".join(range(120,999), ",")
@@ -55,42 +80,29 @@ nnoremap <Down> :echoe "use j"<CR>
 colorscheme gruvbox
 
 " source vimrc after saving it
-"if has("autocmd")
-"  autocmd bufwritepost .vimrc source $MYVIMRC
-"  autocmd bufwritepost vimrc.local source $MYVIMRC
-"endif
+if has("autocmd")
+  autocmd bufwritepost .vimrc source $MYVIMRC
+  autocmd bufwritepost vimrc.local source $MYVIMRC
+endif
 
 " vim airline
 let g:airline#extensions#tabline#enabled = 1
 let g:airline_theme='hybrid'
 
-" Spelling
-set spelllang=en
-set spellfile=$HOME/.spelling.en.utf-8.add
-set spell
-set conceallevel=2
-let g:grammarous#default_comments_only_filetypes = {
-  \'*': 1, 'help' : 0, 'markdown': 0,
-  \}
+let g:pymode_python = 'python3'
 
-" Protobuf support
-augroup filetype
-  au! BufRead,BufNewFile *.proto setfiletype proto
-augroup end
-
-" Fzf configurations
-let g:fzf_action = {
-      \'ctrl-t': 'tab split',
-      \'ctrl-x': 'split',
-      \'ctrl-v': 'vsplit'}
-let g:fzf_layout = { 'down': '~40%'}
-
-" Terraform
-let g:terraform_fmt_on_save=1
-
-" Python mode
-let g:python_mode = 'python3'
-let g:pymode_trim_whitespaces = 1
+" auto close preview-window when you leave insert mode
+autocmd InsertLeave * if pumvisible() == 0 | silent! pclose | endif
 
 " delete trailing whitespace from all files
 autocmd BufWritePre * :%s/\s\+$//e
+
+let g:go_gocode_propose_source = 1
+let g:deoplete#sources#go#gocode_binary = $GOPATH.'/bin/gocode'
+autocmd BufWritePost *.go silent! GoBuild -i
+let g:go_fmt_command = "goimports"
+
+noremap <leader>z :bp<CR>
+let g:ale_linters = {'go': ['golangci-lint']}
+let g:ale_go_golangci_lint_package = 1
+let g:airline_powerline_fonts = 1

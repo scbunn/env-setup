@@ -1,0 +1,147 @@
+# source antigen
+source $HOME/src/antigen/antigen.zsh
+antigen use oh-my-zsh
+antigen theme https://github.com/denysdovhan/spaceship-zsh-theme spaceship
+
+ZSH_TMUX_AUTOSTART=true
+
+# Spaceship
+SPACESHIP_EXIT_CODE_SHOW=true
+SPACESHIP_BATTERY_SHOW=true
+SPACESHIP_EXEC_TIME_SHOW=true
+SPACESHIP_TERRAFORM_SHOW=false
+SPACESHIP_EMBER_SHOW=false
+SPACESHIP_DOTNET_SHOW=false
+SPACESHIP_PYENV_SHOW=false
+SPACESHIP_CONDA_SHOW=false
+SPACESHIP_VENV_SHOW=true
+SPACESHIP_AWS_SHOW=true
+SPACESHIP_DOCKER_SHOW=false
+SPACESHIP_GOLANG_SHOW=false
+SPACESHIP_PACKAGE_SHOW=false
+SPACESHIP_HG_STATUS_SHOW=false
+SPACESHIP_KUBECONTEXT_SHOW=true
+SPACESHIP_KUBECONTEXT_NAMESPACE_SHOW=true
+SPACESHIP_KUBECONTEXT_COLOR_GROUPS=(
+  # red if namespace is "kube-system"
+  red    '\(kube-system)$'
+  # else, green if "dev-01" is anywhere in the context or namespace
+  green  dev-01
+  # else, red if context name ends with ".k8s.local" _and_ namespace is "system"
+  red    '\.k8s\.local \(system)$'
+  # else, yellow if the entire content is "test-" followed by digits, and no namespace is displayed
+  yellow '^test-[0-9]+$'
+)
+
+# Bundles
+antigen bundle brew
+antigen bundle git
+antigen bundle compleat
+antigen bundle zsh-users/zsh-syntax-highlighting
+antigen bundle zsh-users/zsh-autosuggestions
+antigen bundle zsh-users/zsh-completions
+antigen bundle zsh-users/zsh-history-substring-search ./zsh-history-substring-search.zsh
+antigen bundle djui/alias-tips
+antigen bundle kubectl
+antigen bundle tmux
+antigen bundle fzf
+antigen bundle ssh-agent
+antigen apply
+
+# Customize to you needs...
+fpath=("/usr/local/bin/" $fpath)
+export PATH="${HOME}/go/bin:${PATH}"
+
+setopt AUTO_CD
+setopt MULTIOS
+setopt AUTO_PUSHD
+setopt AUTO_NAME_DIRS
+setopt GLOB_COMPLETE
+setopt PUSHD_MINUS
+setopt PUSHD_TO_HOME
+setopt PUSHD_IGNORE_DUPS
+setopt RM_STAR_WAIT
+setopt ZLE
+setopt NO_HUP
+setopt EXTENDED_GLOB
+
+# GO Settings
+export GOPATH="${HOME}/go"
+
+
+
+# functions
+h() {
+  eval $( ([ -n "$ZSH_NAME" ] && fc -l 1 || history) | fzf +s --tac | sed 's/ *[0-9]* *//')
+}
+
+fd() {
+  local dir
+  dir=$(find ${1:-.} -path '*/\.*' -prune \
+                  -o -type d -print 2> /dev/null | fzf +m) &&
+  cd "$dir"
+}
+
+preview() {
+  f=$(fzf --preview '[[ $(file --mime {}) =~ binary ]] &&
+                 echo {} is a binary file ||
+                 (bat --style=numbers --color=always {} ||
+                  highlight -O ansi -l {} ||
+                  coderay {} ||
+                  rougify {} ||
+                  cat {}) 2> /dev/null | head -500')
+  vim $f
+}
+
+git-commit-show ()
+{
+  git log --graph --color=always --format="%C(auto)%h%d %s %C(black)%C(bold)%cr"  | \
+   fzf --ansi --no-sort --reverse --tiebreak=index --preview \
+   'f() { set -- $(echo -- "$@" | grep -o "[a-f0-9]\{7\}"); [ $# -eq 0 ] || git show --color=always $1 ; }; f {}' \
+   --bind "j:down,k:up,alt-j:preview-down,alt-k:preview-up,ctrl-f:preview-page-down,ctrl-b:preview-page-up,q:abort,ctrl-m:execute:
+                (grep -o '[a-f0-9]\{7\}' | head -1 |
+                xargs -I % sh -c 'git show --color=always % | less -R') << 'FZF-EOF'
+                {}
+FZF-EOF" --preview-window=right:60%
+}
+
+# git log show with fzf
+gli() {
+
+  # param validation
+  if [[ ! `git log -n 1 $@ | head -n 1` ]] ;then
+    return
+  fi
+
+  # filter by file string
+  local filter
+  # param existed, git log for file if existed
+  if [ -n $@ ] && [ -f $@ ]; then
+    filter="-- $@"
+  fi
+
+  # git command
+  local gitlog=(
+    git log
+    --graph --color=always
+    --abbrev=7
+    --format='%C(auto)%h %an %C(blue)%s %C(yellow)%cr'
+    $@
+  )
+
+  # fzf command
+  local fzf=(
+    fzf
+    --ansi --no-sort --reverse --tiebreak=index
+    --preview "f() { set -- \$(echo -- \$@ | grep -o '[a-f0-9]\{7\}'); [ \$# -eq 0 ] || git show --color=always \$1 $filter; }; f {}"
+    --bind "ctrl-q:abort,ctrl-m:execute:
+                (grep -o '[a-f0-9]\{7\}' | head -1 |
+                xargs -I % sh -c 'git show --color=always % $filter | less -R') << 'FZF-EOF'
+                {}
+                FZF-EOF"
+   --preview-window=right:60%
+  )
+
+  # piping them
+  $gitlog | $fzf
+}
